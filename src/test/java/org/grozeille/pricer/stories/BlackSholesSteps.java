@@ -4,6 +4,7 @@ import static org.fest.assertions.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.when;
 
+import org.fest.assertions.Delta;
 import org.grozeille.pricer.DateOffset;
 import org.grozeille.pricer.DateOffsetType;
 import org.grozeille.pricer.MarketDataService;
@@ -15,8 +16,10 @@ import org.grozeille.pricer.utils.FixedDateService;
 import org.grozeille.pricer.utils.OptionArgs;
 import org.grozeille.pricer.utils.StepsDefinition;
 import org.jbehave.core.annotations.AfterScenario;
+import org.jbehave.core.annotations.Alias;
 import org.jbehave.core.annotations.BeforeScenario;
 import org.jbehave.core.annotations.Given;
+import org.jbehave.core.annotations.Named;
 import org.jbehave.core.annotations.Then;
 import org.jbehave.core.annotations.When;
 import org.jbehave.core.model.ExamplesTable;
@@ -56,15 +59,16 @@ public class BlackSholesSteps {
     @Given("the following option: $table")
     public void givenTheFollowingOption(ExamplesTable table) {
         this.input = new OptionArgs();
-
-        this.input.setOptionType(Enum.valueOf(OptionType.class, table.getRow(0).get("type")));
-        this.input.setSpot(Double.parseDouble(table.getRow(0).get("spot")));
-        this.input.setStrike(Double.parseDouble(table.getRow(0).get("strike")));
-        this.input.setRate(Double.parseDouble(table.getRow(0).get("rate")));
-        this.input.setVolatility(Double.parseDouble(table.getRow(0).get("volatility")));
-
-        String maturityString = table.getRow(0).get("maturity");
-
+        
+        boolean replaceNamedParameters = true;
+        this.input.setOptionType(OptionType.valueOf(table.getRowAsParameters(0, replaceNamedParameters).valueAs("type", String.class)));
+        this.input.setSpot(table.getRowAsParameters(0, replaceNamedParameters).valueAs("spot", Double.class));
+        this.input.setStrike(table.getRowAsParameters(0, replaceNamedParameters).valueAs("strike", Double.class));
+        this.input.setRate(table.getRowAsParameters(0, replaceNamedParameters).valueAs("rate", Double.class));
+        this.input.setVolatility(table.getRowAsParameters(0, replaceNamedParameters).valueAs("volatility", Double.class));
+        
+        String maturityString = table.getRowAsParameters(0, replaceNamedParameters).valueAs("maturity", String.class);
+        
         this.input.setMaturity(parseMaturity(maturityString));
     }
 
@@ -122,10 +126,11 @@ public class BlackSholesSteps {
         this.result = pricer.priceWithMarketData(optionType, underlyingName, maturity, strike);
     }
 
-    @Then("the result should be $expected")
-    public void ThenTheResultShouldBe(double expected)
+    @Then("the price should be: $price")
+    @Alias("the price should be: <price>")
+    public void ThenThePriceShouldBe(@Named("price") double price)
     {
-        assertThat(this.result.getPrice()).isEqualTo(expected).as("Wrong price");
+        assertThat(this.result.getPrice()).isEqualTo(price, Delta.delta(0.01)).as("Wrong price");
     }
 
     public LocalDate parseMaturity(String maturityString)
