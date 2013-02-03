@@ -27,7 +27,7 @@ import org.joda.time.LocalDate;
 @StepsDefinition
 public class BlackSholesSteps {
     
-    private DateOffsetConverter dateOffsetConverter;
+    private DateOffsetConverter dateOffsetConverter = new DateOffsetConverter();
 
     private FixedDateService dateService;
 
